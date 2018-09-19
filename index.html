@@ -4,13 +4,28 @@
     <meta charset="utf-8">
     <title>Tax Calculator</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <style media="screen">
+      td {
+        padding: 5px;
+      }
+      #data-display {
+        margin-top: 1em;
+      }
+      #data-display table {
+        border-collapse: collapse;
+      }
+      #data-display td {
+        padding: 10px;
+        border: 1px solid black;
+      }
+    </style>
   </head>
   <body>
     <form id="tax-form" method="post">
       <table>
         <tr>
           <td>Name</td>
-          <td><input type="text" name="item-name"></td>
+          <td><input type="text" name="item-name" required></td>
         </tr>
         <tr>
           <td>Tax Code</td>
@@ -24,7 +39,7 @@
         </tr>
         <tr>
           <td>Amount</td>
-          <td><input type="number" name="item-amount"></td>
+          <td><input type="number" name="item-amount" required></td>
         </tr>
         <tr>
           <td colspan="2"><input type="submit" name="submit-form" value="Submit"></td>
@@ -46,7 +61,7 @@
         {{ range $detail := .Detail }}
         <tr>
           <td>{{ $detail.Name }}</td>
-          <td>{{ $detail.TaxCode }}</td>
+          <td>{{ $detail.Code }}</td>
           <td>{{ $detail.Type }}</td>
           <td>{{ $detail.Amount }}</td>
           <td>{{ $detail.TaxAmount }}</td>
@@ -70,7 +85,8 @@
     {{ end }}
   </body>
 </html>
- <script type="text/javascript">
+
+<script type="text/javascript">
   $('#tax-form').submit(function(e) {
     e.preventDefault();
     var formData = $(this).serialize();

@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  tax-calc-service:
+    build: .
+    volumes:
+      - .:/go/src/app
+    ports:
+      - 8000:80
+
+  mysql-db:
+    image: mysql:8.0.2
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: tax-calc
+    ports:
+      - "3308:3306"

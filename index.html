@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Tax Calculator</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  </head>
+  <body>
+    <form id="tax-form" method="post">
+      <table>
+        <tr>
+          <td>Name</td>
+          <td><input type="text" name="item-name"></td>
+        </tr>
+        <tr>
+          <td>Tax Code</td>
+          <td>
+            <select name="item-tax-code">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Amount</td>
+          <td><input type="number" name="item-amount"></td>
+        </tr>
+        <tr>
+          <td colspan="2"><input type="submit" name="submit-form" value="Submit"></td>
+        </tr>
+      </table>
+    </form>
+    {{ $numOfData := len .Detail }}
+    {{ if gt $numOfData 0 }}
+    <div id="data-display">
+      <table>
+        <tr>
+          <td>Name</td>
+          <td>Tax Code</td>
+          <td>Type</td>
+          <td>Amount</td>
+          <td>Tax Amount</td>
+          <td>Total Amount</td>
+        </tr>
+        {{ range $detail := .Detail }}
+        <tr>
+          <td>{{ $detail.Name }}</td>
+          <td>{{ $detail.TaxCode }}</td>
+          <td>{{ $detail.Type }}</td>
+          <td>{{ $detail.Amount }}</td>
+          <td>{{ $detail.TaxAmount }}</td>
+          <td>{{ $detail.TotalAmount }}</td>
+        </tr>
+        {{ end }}
+        <tr>
+          <td>Total Amount :</td>
+          <td colspan="5">{{ .Total }}</td>
+        </tr>
+        <tr>
+          <td>Total Tax Amount :</td>
+          <td colspan="5">{{ .TotalTax }}</td>
+        </tr>
+        <tr>
+          <td>Grand Total :</td>
+          <td colspan="5">{{ .GrandTotal }}</td>
+        </tr>
+      </table>
+    </div>
+    {{ end }}
+  </body>
+</html>
+ <script type="text/javascript">
+  $('#tax-form').submit(function(e) {
+    e.preventDefault();
+    var formData = $(this).serialize();
+    $.ajax({
+      url: '/calculate',
+      type: "POST",
+      data: formData,
+      success: function(result) {
+        location.reload();
+      }
+    });
+  });
+</script>

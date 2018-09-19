@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -18,7 +19,14 @@ const (
 )
 
 type ResponseJSON struct {
-	Data interface{} `json:"data"`
+	Header ResponseHeader `json:"header"`
+	Data   interface{}    `json:"data"`
+}
+
+type ResponseHeader struct {
+	Message   string `json:"message"`
+	Reason    string `json:"reason"`
+	ErrorCode int    `json:"error_code"`
 }
 
 type OrderDetail struct {
@@ -82,22 +90,36 @@ func doCalculation(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	itemName := r.FormValue("item-name")
-	itemTaxCode := r.FormValue("item-tax-code")
-	itemAmount := r.FormValue("item-amount")
+	if itemName == "" {
+		writeResponse(w, nil, http.StatusBadRequest, "Invalid Item Name", "Item name must not empty")
+		return
+	}
+
+	itemTaxCode, err := strconv.ParseInt(r.FormValue("item-tax-code"), 10, 64)
+	if err != nil {
+		writeResponse(w, nil, http.StatusBadRequest, "Invalid Tax Code", "Tax code must be in numeric format")
+		return
+	}
+
+	itemAmount, err := strconv.ParseInt(r.FormValue("item-amount"), 10, 64)
+	if err != nil {
+		writeResponse(w, nil, http.StatusBadRequest, "Invalid Amount", "Amount must be in numeric format")
+		return
+	}
 
 	query := `INSERT INTO order_detail(item_name, item_tax_code, item_amount) VALUES (?, ?, ?)`
 	_, err = db.Query(query, itemName, itemTaxCode, itemAmount)
 	if err != nil {
 		log.Println("Error querying insert to db. Error :", err)
+		writeResponse(w, nil, http.StatusInternalServerError, "Unable to insert data into database", err.Error())
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 	response := ResponseJSON{
 		Data: "OK",
 	}
-	e, _ := json.Marshal(response)
-	w.Write(e)
+
+	writeResponse(w, response, http.StatusOK, "", "")
 }
 
 func main() {
@@ -132,4 +154,22 @@ func calculateTax(taxCode int, amount float64) float64 {
 		}
 	}
 	return taxAmount
+}
+
+func writeResponse(w http.ResponseWriter, data interface{}, statusCode int, message string, reason string) {
+	w.Header().Set("Content-Type", "application/json")
+	response := ResponseJSON{
+		Header: ResponseHeader{
+			Message:   message,
+			Reason:    reason,
+			ErrorCode: statusCode,
+		},
+		Data: data,
+	}
+	resp, err := json.Marshal(response)
+	if err != nil {
+		log.Println("[writeResponse] Error marshalling response. Error :", err)
+	}
+	w.WriteHeader(statusCode)
+	w.Write(resp)
 }

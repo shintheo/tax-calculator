@@ -11,17 +11,14 @@ const (
 	ENTERTAINMENT_TAX_CODE = 3
 )
 
-func (tax *Tax) GetTaxType() string {
-	var taxType string
+func (tax *Tax) SetTaxType() {
 	if tax.Code == FOOD_TAX_CODE {
-		taxType = "Food"
+		tax.Type = "Food"
 	} else if tax.Code == TOBACCO_TAX_CODE {
-		taxType = "Tobacco"
+		tax.Type = "Tobacco"
 	} else if tax.Code == ENTERTAINMENT_TAX_CODE {
-		taxType = "Entertainment"
+		tax.Type = "Entertainment"
 	}
-
-	return taxType
 }
 
 func (tax *Tax) CalculateTax(amount float64) float64 {

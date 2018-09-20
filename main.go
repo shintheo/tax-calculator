@@ -13,6 +13,8 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+var db *sql.DB = initDatabase()
+
 type ResponseJSON struct {
 	Header ResponseHeader `json:"header"`
 	Data   interface{}    `json:"data"`
@@ -42,13 +44,6 @@ type Order struct {
 func handleCalculation(w http.ResponseWriter, r *http.Request) {
 	var order Order
 
-	db, err := sql.Open("mysql", "root:password@tcp(mysql-db:3306)/tax-calc")
-	if err != nil {
-		panic(fmt.Sprintf("Error opening db connection. Error : %s", err.Error()))
-	}
-
-	defer db.Close()
-
 	rows, err := db.Query("SELECT item_name, item_tax_code, item_amount FROM order_detail")
 	if err != nil {
 		log.Println("Error querying select to db. Error :", err)
@@ -60,7 +55,7 @@ func handleCalculation(w http.ResponseWriter, r *http.Request) {
 			log.Println("Error scan query result. Error :", err)
 		}
 
-		detail.Type = detail.GetTaxType()
+		detail.SetTaxType()
 		detail.TaxAmount = detail.CalculateTax(float64(detail.Amount))
 		detail.TotalAmount = float64(detail.Amount) + detail.TaxAmount
 
@@ -70,19 +65,11 @@ func handleCalculation(w http.ResponseWriter, r *http.Request) {
 		order.GrandTotal = order.GrandTotal + detail.TotalAmount
 	}
 
-	fmt.Println("Order :", order)
 	t, _ := template.ParseFiles("index.html")
 	t.Execute(w, order)
 }
 
 func doCalculation(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("mysql", "root:password@tcp(mysql-db:3306)/tax-calc")
-	if err != nil {
-		panic(fmt.Sprintf("Error opening db connection. Error : %s", err.Error()))
-	}
-
-	defer db.Close()
-
 	itemName := r.FormValue("item-name")
 	if itemName == "" {
 		writeResponse(w, nil, http.StatusBadRequest, "Invalid Item Name", "Item name must not empty")
@@ -116,12 +103,22 @@ func doCalculation(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, response, http.StatusOK, "", "")
 }
 
+func initDatabase() *sql.DB {
+	db, err := sql.Open("mysql", "root:password@tcp(mysql-db:3306)/tax-calc")
+	if err != nil {
+		panic(fmt.Sprintf("Error opening db connection. Error : %s", err.Error()))
+	}
+
+	return db
+}
+
 func main() {
 	http.HandleFunc("/", handleCalculation)
 	http.HandleFunc("/calculate", doCalculation)
 	http.ListenAndServe(":80", nil)
 }
 
+//This is util function for writing api response
 func writeResponse(w http.ResponseWriter, data interface{}, statusCode int, message string, reason string) {
 	w.Header().Set("Content-Type", "application/json")
 	response := ResponseJSON{
